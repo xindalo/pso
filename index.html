@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>茶乙己 · 门店点单系统</title>
+<style>
+  /* ============ 全局重置 ============ */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+    font-size: 14px;
+    color: #2c2c2c;
+    background: #f3f4f6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+  ul, li { list-style: none; }
+
+  /* ============ 变量 ============ */
+  :root {
+    --primary: #ff6b35;
+    --primary-hover: #ff5722;
+    --primary-light: #fff2ec;
+    --danger: #ff3b30;
+    --bg: #f3f4f6;
+    --card: #ffffff;
+    --border: #ececef;
+    --text: #2c2c2c;
+    --text-sub: #8a8a8f;
+    --text-dim: #b8b8bf;
+    --nav-bg: #2c2c2c;
+    --nav-active-bg: #ff6b35;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,.06);
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+  }
+
+  /* ============ 布局 ============ */
+  .app {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ============ 左侧导航栏 ============ */
+  .sider {
+    width: 72px;
+    background: var(--nav-bg);
+    color: #fff;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .brand {
+    padding: 22px 14px 20px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+  .brand .logo {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #fff;
+  }
+  .brand .logo .green { color: #41c96a; }
+  .brand .slogan {
+    font-size: 9px;
+    color: #8a8a8a;
+    letter-spacing: 2px;
+    margin-top: 2px;
+  }
+  .nav-menu {
+    flex: 1;
+    padding: 14px 0;
+    overflow-y: auto;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 14px 8px;
+    color: #b8b8bf;
+    cursor: pointer;
+    transition: all .2s;
+    position: relative;
+  }
+  .nav-item:hover { color: #fff; }
+  .nav-item.active {
+    color: #fff;
+    background: var(--nav-active-bg);
+    border-radius: 0;
+    margin: 0 -1px 0 0;
+  }
+  .nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0; bottom: 0;
+    width: 3px;
+    background: var(--primary);
+  }
+  .nav-item svg {
+    width: 22px;
+    height: 22px;
+  }
+  .nav-item span {
+    font-size: 12px;
+  }
+
+  /* ============ 主内容区 ============ */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ============ 顶部信息栏 ============ */
+  .topbar {
+    height: 56px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    flex-shrink: 0;
+  }
+  .store-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+  }
+  .store-info .icon-store {
+    width: 18px; height: 18px;
+    background: var(--primary);
+    -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'><path d='M3 4h18v2H3V4zm2 4h14v12H5V8zm4 3v2h6v-2H9z'/></svg>") center/contain no-repeat;
+    mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'><path d='M3 4h18v2H3V4zm2 4h14v12H5V8zm4 3v2h6v-2H9z'/></svg>") center/contain no-repeat;
+  }
+  .store-info .name {
+    font-weight: 600;
+  }
+  .topbar-spacer { flex: 1; }
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .topbar-time {
+    font-size: 13px;
+    color: var(--text-sub);
+    margin-right: 12px;
+  }
+  .topbar-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center; justify-content: center;
+    color: #555;
+    transition: background .2s;
+    position: relative;
+  }
+  .topbar-btn:hover { background: var(--bg); color: var(--primary); }
+  .topbar-btn .badge-dot {
+    position: absolute;
+    top: 6px; right: 6px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--danger);
+    border: 1.5px solid #fff;
+  }
+  .topbar-btn svg { width: 20px; height: 20px; }
+  .user-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px 4px 4px;
+    border-radius: 30px;
+    background: #fafafa;
+    border: 1px solid var(--border);
+    margin-left: 4px;
+  }
+  .user-chip:hover { background: #f0f0f0; }
+  .user-chip .avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff8a65, #ff6b35);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 12px; font-weight: 600;
+  }
+  .user-chip .name { font-size: 13px; color: var(--text); }
+
+  /* ============ 主体区域 ============ */
+  .content {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ============ 左侧订单栏 ============ */
+  .order-panel {
+    width: 360px;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .order-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .order-header .table-no {
+    font-size: 14px;
+    color: var(--text-sub);
+  }
+  .order-header .table-no b {
+    color: var(--primary);
+    font-size: 16px;
+    margin-left: 4px;
+  }
+  .order-header .actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+  }
+  .ghost-btn {
+    padding: 5px 12px;
+    border-radius: var(--radius-sm);
+    color: #555;
+    font-size: 13px;
+    transition: background .2s;
+  }
+  .ghost-btn:hover { background: #f5f5f5; }
+
+  .order-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px 0;
+  }
+  .order-list::-webkit-scrollbar { width: 6px; }
+  .order-list::-webkit-scrollbar-thumb { background: #d8d8d8; border-radius: 3px; }
+  .order-item {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: background .15s;
+    position: relative;
+  }
+  .order-item:hover { background: #fafafa; }
+  .order-item.active {
+    background: var(--primary-light);
+  }
+  .order-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--primary);
+  }
+  .order-item .info { flex: 1; min-width: 0; }
+  .order-item .name {
+    font-size: 14px;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .order-item .specs {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .order-item .qty {
+    font-size: 13px;
+    color: var(--text-sub);
+    margin: 0 6px;
+  }
+  .order-item .price {
+    font-size: 14px;
+    color: var(--text);
+    min-width: 44px;
+    text-align: right;
+  }
+
+  .order-side {
+    width: 80px;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    padding: 12px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .qty-stepper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 56px;
+    background: #fafafa;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .qty-stepper button {
+    width: 100%;
+    height: 32px;
+    color: #555;
+    font-size: 16px;
+    transition: all .15s;
+  }
+  .qty-stepper button:hover { background: var(--primary-light); color: var(--primary); }
+  .qty-stepper .v {
+    height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  .ghost-btn-block {
+    width: 56px;
+    padding: 8px 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    color: #555;
+    background: #fff;
+    transition: all .15s;
+  }
+  .ghost-btn-block:hover { border-color: var(--primary); color: var(--primary); }
+  .ghost-btn-block.danger {
+    color: var(--danger);
+  }
+  .ghost-btn-block.danger:hover {
+    border-color: var(--danger);
+    background: #fff1f0;
+  }
+
+  .order-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  .order-footer {
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .checkout-summary {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .checkout-summary .total {
+    color: var(--primary);
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .checkout-summary .count {
+    font-size: 12px;
+    color: var(--text-sub);
+  }
+  .checkout-summary .count .pct { color: var(--text-sub); }
+  .primary-btn {
+    background: var(--primary);
+    color: #fff;
+    padding: 12px 36px;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: 600;
+    transition: background .2s;
+  }
+  .primary-btn:hover { background: var(--primary-hover); }
+  .coupon-btn {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    font-size: 13px;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    transition: all .15s;
+  }
+  .coupon-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* ============ 右侧商品栏 ============ */
+  .goods-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  .category-bar {
+    padding: 14px 20px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .cat-btn {
+    padding: 7px 16px;
+    border-radius: 18px;
+    font-size: 13px;
+    color: #555;
+    background: #f5f5f7;
+    transition: all .2s;
+    white-space: nowrap;
+  }
+  .cat-btn:hover { background: var(--primary-light); color: var(--primary); }
+  .cat-btn.active {
+    background: var(--primary);
+    color: #fff;
+  }
+  .cat-spacer { flex: 1; }
+  .search-box {
+    position: relative;
+    width: 220px;
+  }
+  .search-box input {
+    width: 100%;
+    height: 34px;
+    border: 1px solid var(--border);
+    border-radius: 17px;
+    padding: 0 14px 0 36px;
+    background: #fafafa;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    transition: all .2s;
+  }
+  .search-box input:focus {
+    border-color: var(--primary);
+    background: #fff;
+  }
+  .search-box .s-icon {
+    position: absolute;
+    left: 12px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dim);
+    pointer-events: none;
+  }
+  .search-box .s-icon svg { width: 16px; height: 16px; }
+
+  .goods-grid {
+    flex: 1;
+    padding: 16px 20px;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+    align-content: start;
+  }
+  .goods-grid::-webkit-scrollbar { width: 8px; }
+  .goods-grid::-webkit-scrollbar-thumb { background: #d6d6d6; border-radius: 4px; }
+  .goods-card {
+    background: var(--card);
+    border-radius: var(--radius-md);
+    padding: 10px;
+    cursor: pointer;
+    transition: all .2s;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+  }
+  .goods-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+  .goods-card .thumb {
+    width: 100%;
+    height: 100px;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, #ffe0c4 0%, #fff2ec 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    position: relative;
+  }
+  .goods-card .thumb .img-emoji {
+    font-size: 56px;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,.1));
+  }
+  .goods-card .badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    min-width: 18px;
+    height: 18px;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 9px;
+    font-size: 11px;
+    padding: 0 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+  }
+  .goods-card .name {
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .goods-card .desc {
+    font-size: 11px;
+    color: var(--text-dim);
+    height: 28px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 14px;
+    margin-bottom: 6px;
+  }
+  .goods-card .price {
+    color: var(--primary);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .goods-card .price .yuan { font-size: 12px; margin-right: 1px; }
+
+  /* ============ 空状态 ============ */
+  .empty-orders {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    padding: 40px 20px;
+    gap: 8px;
+  }
+  .empty-orders svg { width: 60px; height: 60px; opacity: .5; }
+  .empty-orders p { font-size: 13px; }
+
+  /* ============ 弹窗 ============ */
+  .modal-mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    z-index: 999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn .2s;
+  }
+  .modal-mask.show { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .modal {
+    background: #fff;
+    border-radius: var(--radius-lg);
+    min-width: 400px;
+    max-width: 500px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.2);
+    overflow: hidden;
+    animation: slideUp .25s;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .modal-header {
+    padding: 16px 20px;
+    font-size: 16px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-close {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    color: var(--text-sub);
+  }
+  .modal-close:hover { background: #f5f5f5; color: var(--text); }
+  .modal-body {
+    padding: 20px;
+    min-height: 100px;
+  }
+  .modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .btn-secondary {
+    padding: 8px 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: #555;
+    font-size: 13px;
+  }
+  .btn-secondary:hover { border-color: var(--text-sub); }
+
+  /* 规格选择器 */
+  .spec-group { margin-bottom: 16px; }
+  .spec-group h4 {
+    font-size: 13px;
+    color: var(--text-sub);
+    margin-bottom: 8px;
+  }
+  .spec-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .spec-option {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    font-size: 13px;
+    color: #555;
+    transition: all .15s;
+  }
+  .spec-option:hover { border-color: var(--primary); color: var(--primary); }
+  .spec-option.active {
+    background: var(--primary-light);
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+
+  /* 备注输入 */
+  .note-area {
+    width: 100%;
+    min-height: 70px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    font-size: 13px;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+  }
+  .note-area:focus { border-color: var(--primary); }
+
+  /* toast 提示 */
+  .toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,.82);
+    color: #fff;
+    padding: 10px 22px;
+    border-radius: 22px;
+    font-size: 13px;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity .25s, top .25s;
+  }
+  .toast.show { opacity: 1; top: 56px; }
+
+  /* 确认结算弹窗 */
+  .pay-methods {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .pay-method {
+    padding: 18px 10px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    text-align: center;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .pay-method:hover { border-color: var(--primary); }
+  .pay-method.active {
+    border-color: var(--primary);
+    background: var(--primary-light);
+  }
+  .pay-method .icon { font-size: 28px; margin-bottom: 6px; }
+  .pay-method .label { font-size: 13px; color: var(--text); }
+  .pay-total {
+    padding: 14px 0;
+    border-top: 1px dashed var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+  }
+  .pay-total .amount { color: var(--primary); font-size: 22px; font-weight: 700; }
+
+  /* 折扣滑块 */
+  .discount-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .discount-row input[type=range] {
+    flex: 1;
+    accent-color: var(--primary);
+  }
+  .discount-row .val {
+    width: 60px;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px;
+    font-size: 13px;
+  }
+
+  /* 时间更新 */
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+  .pulse { animation: pulse 1.5s infinite; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ========= 左侧导航栏 ========= -->
+  <aside class="sider">
+    <div class="brand">
+      <div class="logo">茶乙己<span class="green">·</span></div>
+      <div class="slogan">CHA YIJI</div>
+    </div>
+    <nav class="nav-menu">
+      <div class="nav-item active" data-key="order">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h2v14H3V5zm4 0h2v14H7V5zm4 0h2v14h-2V5zm4 0h2v14h-2V5zm4 0h2v14h-2V5z"/></svg>
+        <span>点单</span>
+      </div>
+      <div class="nav-item" data-key="dashboard">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h7v7H4V4zm0 9h7v7H4v-7zm9-9h7v4h-7V4zm0 6h7v10h-7V10z"/></svg>
+        <span>看板</span>
+      </div>
+      <div class="nav-item" data-key="orders">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 3h14a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm1 2v3h12V5H6zm0 5v2h12v-2H6zm0 4v2h8v-2H6z"/></svg>
+        <span>订单</span>
+      </div>
+      <div class="nav-item" data-key="goods">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4h10l1 2h3v2H3V6h3l1-2zm-2 6h14l-1 9a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 10z"/></svg>
+        <span>商品</span>
+      </div>
+      <div class="nav-item" data-key="table">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h18a1 1 0 0 1 1 1v3H2V7a1 1 0 0 1 1-1zm-1 6h20v6H2v-6zm4 2v2h4v-2H6z"/></svg>
+        <span>桌台</span>
+      </div>
+      <div class="nav-item" data-key="finance">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 2h2v2h-2v-2zm4 0h2v2h-2v-2zm-4 4h2v2h-2v-2zm4 0h2v2h-2v-2z"/></svg>
+        <span>财文</span>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- ========= 主内容区 ========= -->
+  <section class="main">
+
+    <!-- ===== 顶部信息栏 ===== -->
+    <header class="topbar">
+      <div class="store-info">
+        <div class="icon-store"></div>
+        <span class="name">轻CYJ · SFC 影城新业态店</span>
+      </div>
+      <div class="topbar-spacer"></div>
+      <div class="topbar-actions">
+        <div class="topbar-time" id="topbarTime">--</div>
+        <button class="topbar-btn" title="通知">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="badge-dot pulse"></span>
+        </button>
+        <button class="topbar-btn" title="打印">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        </button>
+        <button class="user-chip" title="用户">
+          <div class="avatar">陈</div>
+          <span class="name">陈店长</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ===== 主体 ===== -->
+    <div class="content">
+
+      <!-- ===== 订单栏 ===== -->
+      <div class="order-panel">
+        <div class="order-header">
+          <span class="table-no">桌台: <b id="tableNo">A08</b></span>
+          <div class="actions">
+            <button class="ghost-btn" id="btnHold">挂单</button>
+            <button class="ghost-btn" id="btnClear">清空</button>
+          </div>
+        </div>
+
+        <div class="order-body">
+          <ul class="order-list" id="orderList"></ul>
+          <div class="order-side">
+            <div class="qty-stepper">
+              <button id="btnPlus" title="增加数量">+</button>
+              <div class="v" id="qtyValue">0</div>
+              <button id="btnMinus" title="减少数量">−</button>
+            </div>
+            <button class="ghost-btn-block" id="btnSpec">规格</button>
+            <button class="ghost-btn-block" id="btnNote">备注</button>
+            <button class="ghost-btn-block" id="btnDiscount">折扣</button>
+            <button class="ghost-btn-block" id="btnTake">取单</button>
+            <button class="ghost-btn-block danger" id="btnDel">删除</button>
+          </div>
+        </div>
+
+        <div class="order-footer">
+          <div class="checkout-summary">
+            <div class="total" id="totalAmount">¥0.00</div>
+            <div class="count">共 <span id="totalCount">0</span> 件 <span class="pct" id="discountText"></span></div>
+          </div>
+          <button class="coupon-btn" id="btnCoupon">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8H4v4"/><path d="M14 8v8"/><path d="M2 12a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/></svg>
+            团购核券
+          </button>
+          <button class="primary-btn" id="btnCheckout">结算</button>
+        </div>
+      </div>
+
+      <!-- ===== 商品栏 ===== -->
+      <div class="goods-panel">
+        <div class="category-bar">
+          <button class="cat-btn active" data-cat="all">全部</button>
+          <button class="cat-btn" data-cat="fruit">清爽鲜果茶</button>
+          <button class="cat-btn" data-cat="milk">鲜奶系列</button>
+          <button class="cat-btn" data-cat="meat">多肉系列</button>
+          <button class="cat-btn" data-cat="pure">原味纯茶</button>
+          <button class="cat-btn" data-cat="snack">薯条爆米花</button>
+          <button class="cat-btn" data-cat="coffee">咖啡</button>
+          <div class="cat-spacer"></div>
+          <div class="search-box">
+            <span class="s-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </span>
+            <input type="text" id="searchInput" placeholder="搜索商品名称/SKU" />
+          </div>
+        </div>
+
+        <div class="goods-grid" id="goodsGrid"></div>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<!-- ============ 通用确认弹窗 ============ -->
+<div class="modal-mask" id="modalMask">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <span id="modalTitle">标题</span>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter">
+      <button class="btn-secondary" id="modalCancel">取消</button>
+      <button class="primary-btn" id="modalOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Toast ============ -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   茶乙己 - 门店点单系统
+   ============================================================ */
+
+// ====== 商品数据库 ======
+const PRODUCTS = [
+  // 清爽鲜果茶
+  {id:'g01',cat:'fruit',name:'清新柠檬',desc:'新鲜葡萄果肉搭配多肉葡萄果肉...',price:16,emoji:'🍋',spec:'大杯/五分糖/标准冰'},
+  {id:'g02',cat:'fruit',name:'红玉椰果牛乳',desc:'新鲜葡萄果肉搭配多肉葡萄果肉...',price:13,emoji:'🥥',spec:'大杯/五分糖/标准冰'},
+  {id:'g03',cat:'fruit',name:'茉莉鲜奶',desc:'新鲜葡萄果肉搭配多肉葡萄果肉...',price:16,emoji:'🍵',spec:'大杯/五分糖/标准冰'},
+  {id:'g04',cat:'fruit',name:'霸气手摇葡萄',desc:'新鲜葡萄果肉搭配多肉葡萄果肉...',price:18,emoji:'🍇',spec:'大杯/五分糖/标准冰'},
+  {id:'g05',cat:'fruit',name:'鸭屎柠檬茶',desc:'新鲜葡萄果肉搭配多肉葡萄果肉...',price:16,emoji:'🍋',spec:'大杯/五分糖/标准冰'},
+  {id:'g06',cat:'fruit',name:'多肉黄桃',desc:'新鲜葡萄果肉搭配多肉葡萄果肉...',price:17,emoji:'🍑',spec:'大杯/五分糖/标准冰'},
+  {id:'g07',cat:'fruit',name:'草莓鲜奶茶',desc:'新鲜葡萄果肉搭配多肉葡萄果肉...',price:15,emoji:'🍓',spec:'大杯/五分糖/标准冰'},
+  {id:'g08',cat:'fruit',name:'霸气手摇葡萄',desc:'新鲜葡萄果肉搭配多肉葡萄果肉...',price:14,emoji:'🍇',spec:'大杯/五分糖/标准冰'},
+
+  // 鲜奶系列
+  {id:'m01',cat:'milk',name:'茉莉鲜奶',desc:'新鲜葡萄果肉搭配多肉葡萄果肉...',price:16,emoji:'🍶',spec:'大杯/五分糖/标准冰'},
+  {id:'m02',cat:'milk',name:'红玉椰果牛乳',desc:'新鲜葡萄果肉搭配多肉葡萄果肉...',price:13,emoji:'🥛',spec:'大杯/五分糖/标准冰'},
+  {id:'m03',cat:'milk',name:'草莓鲜奶茶',desc:'新鲜葡萄果肉搭配多肉葡萄果肉...',price:15,emoji:'🍓',spec:'大杯/五分糖/标准冰'},
+
+  // 多肉系列
+  {id:'r01',cat:'meat',name:'多肉葡萄',desc:'新鲜葡萄果肉搭配多肉葡萄果肉...',price:21,emoji:'🍇',spec:'大杯/五分糖/标准冰'},
+  {id:'r02',cat:'meat',name:'霸气手摇葡萄',desc:'新鲜葡萄果肉搭配多肉葡萄果肉...',price:13,emoji:'🍇',spec:'大杯/五分糖/标准冰'},
+  {id:'r03',cat:'meat',name:'多肉葡萄',desc:'新鲜葡萄果肉搭配多肉葡萄果肉...',price:16,emoji:'🍇',spec:'大杯/五分糖/标准冰'},
+
+  // 原味纯茶
+  {id:'p01',cat:'pure',name:'茉莉鲜奶茶',desc:'清新淡雅茉莉花香纯茶',price:12,emoji:'🍵',spec:'大杯/无糖/标准冰'},
+  {id:'p02',cat:'pure',name:'鸭屎柠檬茶',desc:'鸭屎香单丛茶底柠檬搭配',price:18,emoji:'🍋',spec:'大杯/五分糖/标准冰'},
+
+  // 薯条爆米花
+  {id:'s01',cat:'snack',name:'薯条',desc:'新鲜葡萄果肉搭配多肉葡萄果肉...',price:12,emoji:'🍟',spec:'中份/原味'},
+  {id:'s02',cat:'snack',name:'爆米花',desc:'现做焦糖爆米花',price:15,emoji:'🍿',spec:'大份/焦糖'},
+
+  // 咖啡
+  {id:'c01',cat:'coffee',name:'美式咖啡',desc:'意式拼配咖啡豆现磨',price:18,emoji:'☕',spec:'大杯/无糖/热'},
+  {id:'c02',cat:'coffee',name:'拿铁咖啡',desc:'鲜奶融合意式浓缩',price:22,emoji:'☕',spec:'大杯/无糖/热'},
+];
+
+// 让商品按类别重新分布,以便展示更丰富
+PRODUCTS.forEach((p, i) => {
+  // 给商品分配各种类别,避免全部一样
+  if (i < 4) p.cat = 'fruit';
+  else if (i < 7) p.cat = 'meat';
+  else if (i < 10) p.cat = 'milk';
+  else if (i < 13) p.cat = 'fruit';
+  else if (i < 15) p.cat = 'pure';
+  else p.cat = (i % 2 === 0) ? 'snack' : 'coffee';
+});
+
+// 把分类挂到全局便于过滤
+const CATEGORIES = {
+  all: '全部',
+  fruit: '清爽鲜果茶',
+  milk: '鲜奶系列',
+  meat: '多肉系列',
+  pure: '原味纯茶',
+  snack: '薯条爆米花',
+  coffee: '咖啡',
+};
+
+// ====== 状态 ======
+const state = {
+  orders: [
+    {uid:'o1', product: PRODUCTS[0], name:'红豆鲜奶茶', desc:'大杯/五分糖/标准冰', price:16, qty:1, note:''},
+    {uid:'o2', product: PRODUCTS[1], name:'鸭屎柠檬茶', desc:'大杯/五分糖/标准冰', price:18, qty:1, note:''},
+    {uid:'o3', product: PRODUCTS[9], name:'多肉葡萄',   desc:'大杯/五分糖/标准冰', price:21, qty:1, note:''},
+    {uid:'o4', product: PRODUCTS[7], name:'霸气手摇葡萄',desc:'大杯/五分糖/标准冰', price:15, qty:1, note:''},
+    {uid:'o5', product: PRODUCTS[3], name:'茉莉鲜奶',   desc:'大杯/五分糖/标准冰', price:12, qty:1, note:''},
+  ],
+  activeUid: 'o1',
+  currentCat: 'all',
+  search: '',
+  discount: 0,   // 0 = 无折扣; 0.9 表示 9 折
+  payMethod: '微信',
+  currentOrderTotal: 66,
+};
+
+// 给商品加数量徽章(模拟原图中部分商品带红点)
+const HOT_IDS = new Set(['g01','g03','r01','r03']);
+const HOT_COUNT = {g01:1, g03:1, r01:1, r03:1};
+
+// ====== 工具 ======
+const $ = (s, p=document) => p.querySelector(s);
+const $$ = (s, p=document) => [...p.querySelectorAll(s)];
+
+// ====== 渲染商品网格 ======
+function renderGoods() {
+  let list = PRODUCTS;
+  if (state.currentCat !== 'all') list = list.filter(p => p.cat === state.currentCat);
+  if (state.search) {
+    const k = state.search.toLowerCase();
+    list = list.filter(p => p.name.toLowerCase().includes(k) || p.id.toLowerCase().includes(k));
+  }
+  const grid = $('#goodsGrid');
+  grid.innerHTML = list.map(p => {
+    const hot = HOT_COUNT[p.id] || 0;
+    return `
+      <div class="goods-card" data-id="${p.id}">
+        <div class="thumb"><span class="img-emoji">${p.emoji}</span></div>
+        ${hot ? `<div class="badge">${hot}</div>` : ''}
+        <div class="name">${p.name}</div>
+        <div class="desc">${p.desc}</div>
+        <div class="price"><span class="yuan">¥</span>${p.price}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ====== 渲染订单列表 ======
+function renderOrders() {
+  const list = $('#orderList');
+  if (state.orders.length === 0) {
+    list.innerHTML = `
+      <div class="empty-orders" style="flex:1;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M8 12h8M12 8v8"/>
+        </svg>
+        <p>点击右侧商品开始点单</p>
+      </div>
+    `;
+    $('#qtyValue').textContent = '0';
+    $('#btnPlus').disabled = true;
+    $('#btnMinus').disabled = true;
+    $('#btnSpec').disabled = true;
+    $('#btnNote').disabled = true;
+    $('#btnDel').disabled = true;
+    $('#btnTake').disabled = true;
+  } else {
+    list.innerHTML = state.orders.map(o => `
+      <li class="order-item ${o.uid === state.activeUid ? 'active' : ''}" data-uid="${o.uid}">
+        <div class="info">
+          <div class="name">${o.name}</div>
+          <div class="specs">${o.desc}</div>
+        </div>
+        <span class="qty">X${o.qty}</span>
+        <span class="price">¥${o.price * o.qty}</span>
+      </li>
+    `).join('');
+    const active = state.orders.find(o => o.uid === state.activeUid);
+    $('#qtyValue').textContent = active ? active.qty : 0;
+    const enabled = !!active;
+    $('#btnPlus').disabled = !enabled;
+    $('#btnMinus').disabled = !enabled;
+    $('#btnSpec').disabled = !enabled;
+    $('#btnNote').disabled = !enabled;
+    $('#btnDel').disabled = !enabled;
+    $('#btnTake').disabled = !enabled;
+  }
+  // 底部汇总
+  const total = state.orders.reduce((s, o) => s + o.price * o.qty, 0);
+  const count = state.orders.reduce((s, o) => s + o.qty, 0);
+  const finalTotal = +(total * (state.discount || 1)).toFixed(2);
+  $('#totalAmount').textContent = '¥' + finalTotal.toFixed(2);
+  $('#totalCount').textContent = count;
+  if (state.discount > 0 && state.discount < 1) {
+    $('#discountText').textContent = `· 已享 ${(state.discount*10).toFixed(1)} 折`;
+  } else {
+    $('#discountText').textContent = '';
+  }
+}
+
+// ====== Toast ======
+let toastTimer;
+function toast(msg) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+// ====== 弹窗封装 ======
+function showModal({title, body, onOk, okText='确定', cancelText='取消', hideCancel=false}) {
+  $('#modalTitle').textContent = title;
+  $('#modalBody').innerHTML = body;
+  $('#modalOk').textContent = okText;
+  $('#modalCancel').textContent = cancelText;
+  $('#modalCancel').style.display = hideCancel ? 'none' : '';
+  const mask = $('#modalMask');
+  mask.classList.add('show');
+  const close = () => {
+    mask.classList.remove('show');
+    $('#modalOk').onclick = null;
+    $('#modalCancel').onclick = null;
+  };
+  $('#modalClose').onclick = close;
+  $('#modalCancel').onclick = close;
+  $('#modalOk').onclick = () => {
+    onOk && onOk();
+    // 若 onOk 没有主动关闭弹窗,则关闭
+    if (mask.classList.contains('show')) close();
+  };
+}
+
+// ====== 商品点击 → 添加到订单 ======
+$('#goodsGrid').addEventListener('click', e => {
+  const card = e.target.closest('.goods-card');
+  if (!card) return;
+  const p = PRODUCTS.find(x => x.id === card.dataset.id);
+  if (!p) return;
+  addToOrder(p);
+});
+
+function addToOrder(p) {
+  // 找相同规格的已存在商品,数量+1
+  const exist = state.orders.find(o => o.name === p.name && o.desc === (p.spec || '大杯/五分糖/标准冰'));
+  if (exist) {
+    exist.qty++;
+  } else {
+    const uid = 'o' + Date.now() + Math.floor(Math.random()*1000);
+    state.orders.push({
+      uid,
+      product: p,
+      name: p.name,
+      desc: p.spec || '大杯/五分糖/标准冰',
+      price: p.price,
+      qty: 1,
+      note: '',
+    });
+    state.activeUid = uid;
+  }
+  renderOrders();
+  toast(`已添加:${p.name}`);
+}
+
+// ====== 选择订单项 ======
+$('#orderList').addEventListener('click', e => {
+  const item = e.target.closest('.order-item');
+  if (!item) return;
+  state.activeUid = item.dataset.uid;
+  renderOrders();
+});
+
+// ====== +/- 数量 ======
+$('#btnPlus').addEventListener('click', () => {
+  const o = state.orders.find(x => x.uid === state.activeUid);
+  if (!o) return;
+  o.qty++;
+  renderOrders();
+});
+$('#btnMinus').addEventListener('click', () => {
+  const o = state.orders.find(x => x.uid === state.activeUid);
+  if (!o) return;
+  if (o.qty > 1) o.qty--;
+  else {
+    state.orders = state.orders.filter(x => x.uid !== o.uid);
+    state.activeUid = state.orders[0]?.uid;
+  }
+  renderOrders();
+});
+
+// ====== 删除 ======
+$('#btnDel').addEventListener('click', () => {
+  const o = state.orders.find(x => x.uid === state.activeUid);
+  if (!o) return;
+  showModal({
+    title: '删除确认',
+    body: `<p style="color:#555;">确定要从订单中删除 <b style="color:#ff3b30">${o.name}</b> 吗?</p>`,
+    okText: '删除',
+    onOk: () => {
+      state.orders = state.orders.filter(x => x.uid !== o.uid);
+      state.activeUid = state.orders[0]?.uid;
+      renderOrders();
+      toast('已删除商品');
+    },
+  });
+});
+
+// ====== 规格 ======
+$('#btnSpec').addEventListener('click', () => {
+  const o = state.orders.find(x => x.uid === state.activeUid);
+  if (!o) return;
+  const sizes = ['大杯','中杯','小杯'];
+  const sugars = ['无糖','三分糖','五分糖','七分糖','全糖'];
+  const ices   = ['去冰','少冰','标准冰','多冰','热饮'];
+  const cur = parseSpec(o.desc);
+  showModal({
+    title: `调整规格 - ${o.name}`,
+    body: `
+      <div class="spec-group">
+        <h4>杯型</h4>
+        <div class="spec-options" data-k="size">
+          ${sizes.map(s => `<button class="spec-option ${cur.size===s?'active':''}" data-v="${s}">${s}</button>`).join('')}
+        </div>
+      </div>
+      <div class="spec-group">
+        <h4>糖度</h4>
+        <div class="spec-options" data-k="sugar">
+          ${sugars.map(s => `<button class="spec-option ${cur.sugar===s?'active':''}" data-v="${s}">${s}</button>`).join('')}
+        </div>
+      </div>
+      <div class="spec-group">
+        <h4>温度</h4>
+        <div class="spec-options" data-k="ice">
+          ${ices.map(s => `<button class="spec-option ${cur.ice===s?'active':''}" data-v="${s}">${s}</button>`).join('')}
+        </div>
+      </div>
+    `,
+    onOk: () => {
+      // 取最后一次选中
+      const result = {};
+      $$('#modalMask .spec-options').forEach(g => {
+        const v = g.querySelector('.spec-option.active');
+        if (v) result[g.dataset.k] = v.dataset.v;
+      });
+      const newDesc = [result.size||cur.size, result.sugar||cur.sugar, result.ice||cur.ice].join('/');
+      o.desc = newDesc;
+      renderOrders();
+      toast('规格已更新');
+    }
+  });
+  // 选项交互
+  setTimeout(() => {
+    $$('#modalMask .spec-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const group = btn.parentElement;
+        group.querySelectorAll('.spec-option').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+  }, 0);
+});
+
+function parseSpec(desc){
+  const parts = (desc||'').split('/');
+  return {
+    size:  parts[0] || '大杯',
+    sugar: parts[1] || '五分糖',
+    ice:   parts[2] || '标准冰',
+  };
+}
+
+// ====== 备注 ======
+$('#btnNote').addEventListener('click', () => {
+  const o = state.orders.find(x => x.uid === state.activeUid);
+  if (!o) return;
+  showModal({
+    title: `备注 - ${o.name}`,
+    body: `
+      <textarea class="note-area" id="noteInput" placeholder="请输入备注,例如:少冰/微糖/加珍珠">${o.note || ''}</textarea>
+      <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">
+        ${['少冰','去冰','加珍珠','加椰果','微糖','无糖','打包','堂食','加吸管'].map(t => `<button class="cat-btn" data-t="${t}" onclick="document.getElementById('noteInput').value += (document.getElementById('noteInput').value?'/':'') + '${t}'">${t}</button>`).join('')}
+      </div>
+    `,
+    onOk: () => {
+      const v = $('#noteInput').value.trim();
+      o.note = v;
+      if (v) o.desc = `${curSize(o)}/${curSugar(o)}/${curIce(o)} [${v}]`;
+      else o.desc = `${curSize(o)}/${curSugar(o)}/${curIce(o)}`;
+      renderOrders();
+      toast(v ? '备注已保存' : '已清除备注');
+    }
+  });
+});
+function curSize(o){ return (parseSpec(o.desc).size) || '大杯'; }
+function curSugar(o){ return (parseSpec(o.desc).sugar) || '五分糖'; }
+function curIce(o){ return (parseSpec(o.desc).ice) || '标准冰'; }
+
+// ====== 折扣 ======
+$('#btnDiscount').addEventListener('click', () => {
+  const cur = state.discount ? state.discount * 10 : 10;
+  showModal({
+    title: '订单折扣',
+    body: `
+      <p style="color:#666;font-size:13px;margin-bottom:12px;">拖动滑块设置订单折扣,可选择快捷比例或自定义</p>
+      <div class="discount-row">
+        <input type="range" id="discRange" min="5" max="10" step="0.5" value="${cur}" />
+        <div class="val"><span id="discVal"></span> 折</div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
+        ${[10,9.5,9,8.5,8,7.5,7].map(v => `<button class="cat-btn" onclick="document.getElementById('discRange').value=${v};document.getElementById('discVal').textContent=${v}">${v}折</button>`).join('')}
+      </div>
+    `,
+    onOk: () => {
+      const v = +$('#discRange').value;
+      state.discount = v >= 10 ? 0 : (v / 10);
+      renderOrders();
+      toast(state.discount ? `已设置 ${v} 折` : '已取消折扣');
+    }
+  });
+  setTimeout(() => {
+    const r = $('#discRange');
+    const v = $('#discVal');
+    v.textContent = r.value;
+    r.addEventListener('input', () => v.textContent = r.value);
+  }, 0);
+});
+
+// ====== 取单 ======
+$('#btnTake').addEventListener('click', () => {
+  const o = state.orders.find(x => x.uid === state.activeUid);
+  if (!o) return;
+  showModal({
+    title: '取单操作',
+    body: `<p style="color:#555;font-size:13px;">将当前选中的商品标记为 <b style="color:#ff6b35">优先制作</b> 状态。</p>`,
+    okText: '确认取单',
+    onOk: () => {
+      toast('已发出取单提醒');
+    }
+  });
+});
+
+// ====== 挂单 ======
+$('#btnHold').addEventListener('click', () => {
+  if (state.orders.length === 0) { toast('当前订单为空'); return; }
+  showModal({
+    title: '挂单',
+    body: `
+      <p style="color:#555;font-size:13px;margin-bottom:8px;">挂单将暂存当前订单,后续可继续编辑或结算。</p>
+      <input type="text" class="note-area" id="holdName" placeholder="备注挂单名称(可选,例如:A08外带)" style="min-height:auto;padding:8px 10px;" />
+    `,
+    onOk: () => {
+      const name = $('#holdName').value.trim() || `挂单${new Date().toLocaleTimeString('zh-CN',{hour12:false})}`;
+      toast(`已挂单:${name}`);
+      // 暂不清空,作为demo
+    }
+  });
+});
+
+// ====== 清空 ======
+$('#btnClear').addEventListener('click', () => {
+  if (state.orders.length === 0) return;
+  showModal({
+    title: '清空确认',
+    body: `<p style="color:#555;">确定要清空当前桌台的 <b>${state.orders.length}</b> 件商品吗?</p>`,
+    okText: '全部清空',
+    onOk: () => {
+      state.orders = [];
+      state.activeUid = null;
+      state.discount = 0;
+      renderOrders();
+      toast('已清空订单');
+    }
+  });
+});
+
+// ====== 团购核券 ======
+$('#btnCoupon').addEventListener('click', () => {
+  if (state.orders.length === 0) { toast('请先点单后再核券'); return; }
+  showModal({
+    title: '团购核券',
+    body: `
+      <p style="color:#555;font-size:13px;margin-bottom:14px;">请选择券类型或输入券码</p>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="cat-btn" onclick="document.getElementById('couponCode').value='MEITUAN2026';this.textContent='✓ 已选择:美团团购券'">美团团购券 · 满50减10</button>
+        <button class="cat-btn" onclick="document.getElementById('couponCode').value='DIANPING2026';this.textContent='✓ 已选择:大众点评券'">大众点评券 · 满80减15</button>
+        <button class="cat-btn" onclick="document.getElementById('couponCode').value='DOUYIN8888';this.textContent='✓ 已选择:抖音团购券'">抖音团购券 · 8 折</button>
+      </div>
+      <input type="text" id="couponCode" placeholder="或输入券码" style="margin-top:12px;width:100%;padding:10px;border:1px solid #ececef;border-radius:6px;font-size:13px;" />
+    `,
+    onOk: () => {
+      const code = $('#couponCode').value.trim();
+      if (!code) { toast('请选择或输入券码'); return; }
+      toast(`核券成功:${code}`);
+    }
+  });
+});
+
+// ====== 结算 ======
+$('#btnCheckout').addEventListener('click', () => {
+  if (state.orders.length === 0) { toast('当前订单为空'); return; }
+  const total = state.orders.reduce((s, o) => s + o.price * o.qty, 0);
+  const finalTotal = +(total * (state.discount || 1)).toFixed(2);
+  showModal({
+    title: '订单结算',
+    body: `
+      <div class="pay-methods">
+        <div class="pay-method active" data-pm="微信"><div class="icon">💚</div><div class="label">微信支付</div></div>
+        <div class="pay-method" data-pm="支付宝"><div class="icon">💙</div><div class="label">支付宝</div></div>
+        <div class="pay-method" data-pm="现金"><div class="icon">💴</div><div class="label">现金</div></div>
+        <div class="pay-method" data-pm="银行卡"><div class="icon">💳</div><div class="label">银行卡</div></div>
+        <div class="pay-method" data-pm="余额"><div class="icon">🪙</div><div class="label">会员余额</div></div>
+        <div class="pay-method" data-pm="其他"><div class="icon">📲</div><div class="label">其他</div></div>
+      </div>
+      <div class="pay-total">
+        <span style="color:#666;">应收金额</span>
+        <span class="amount">¥${finalTotal.toFixed(2)}</span>
+      </div>
+      <div style="margin-top:14px;padding:10px;background:#f9f9f9;border-radius:6px;font-size:12px;color:#666;">
+        共 ${state.orders.length} 件商品 · ${state.orders.reduce((s,o)=>s+o.qty,0)} 杯饮品 ${state.discount?`· 已享 ${state.discount*10} 折`:''}
+      </div>
+    `,
+    okText: '确认收款',
+    onOk: () => {
+      // 模拟收款成功后清空
+      state.orders = [];
+      state.activeUid = null;
+      state.discount = 0;
+      renderOrders();
+      toast(`已收款 ¥${finalTotal.toFixed(2)} · 订单完成`);
+    }
+  });
+  setTimeout(() => {
+    $$('.pay-method').forEach(el => {
+      el.addEventListener('click', () => {
+        $$('.pay-method').forEach(e => e.classList.remove('active'));
+        el.classList.add('active');
+        state.payMethod = el.dataset.pm;
+      });
+    });
+  }, 0);
+});
+
+// ====== 分类切换 ======
+$$('.cat-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    const cat = btn.dataset.cat;
+    if (!cat) return; // 忽略"快捷标签"按钮
+    $$('.category-bar > .cat-btn').forEach(b => {
+      if (b.dataset.cat) b.classList.remove('active');
+    });
+    btn.classList.add('active');
+    state.currentCat = cat;
+    renderGoods();
+  });
+});
+
+// ====== 搜索 ======
+$('#searchInput').addEventListener('input', e => {
+  state.search = e.target.value.trim();
+  renderGoods();
+});
+
+// ====== 顶部时间 ======
+function updateTime() {
+  const d = new Date();
+  const weekdays = ['周日','周一','周二','周三','周四','周五','周六'];
+  const pad = n => String(n).padStart(2,'0');
+  $('#topbarTime').textContent = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${weekdays[d.getDay()]} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+updateTime();
+setInterval(updateTime, 30000);
+
+// ====== 切换桌台 (示例) ======
+function changeTable(name) {
+  $('#tableNo').textContent = name;
+  state.orders = [];
+  state.activeUid = null;
+  state.discount = 0;
+  renderOrders();
+  toast(`已切换至桌台 ${name}`);
+}
+
+// ====== 初始化 ======
+renderGoods();
+renderOrders();
+</script>
+</body>
+</html>
